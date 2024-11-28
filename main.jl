@@ -353,8 +353,14 @@ ode_nuts = sample(model_window_unconditioned| (y = Y[:,1:Window_size],), Turing.
 t2_init = time_ns()
 runtime_init = convert(Int64, t2_init-t1_init)
 
+#A few plots
 logjoint(model_window_unconditioned | (y = Y[:,1:Window_size],) ,ode_nuts)
-
+plot(ode_nuts)
+listofchains = [ode_nuts[250:end,:,chn] for chn in 1:n_chains]
+using CairoMakie
+using PairPlots
+pairplot(ode_nuts[250:end])
+pairplot(listofchains...)
 
 # Create a function to take in the chains and evaluate the number of infections and summarise them (at a specific confidence level)
 function generate_confint_infec_init(chn, y_data, K, conv_mat, knots, obstimes; cri = 0.95)
