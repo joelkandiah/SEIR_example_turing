@@ -363,13 +363,9 @@ pairplot(ode_nuts[250:end])
 pairplot(listofchains...)
 
 # Create a function to take in the chains and evaluate the number of infections and summarise them (at a specific confidence level)
-function generate_confint_infec_init(chn, y_data, K, conv_mat, knots, obstimes; cri = 0.95)
+function generate_confint_infec_init(chn, model; cri = 0.95)
     chnm_res = generated_quantities(
-        bayes_sir_tvp(K;
-            conv_mat = conv_mat,
-            knots = knots,
-            obstimes = obstimes
-            )| (y = y_data,),
+        model,
         chn) 
 
 
@@ -381,13 +377,9 @@ function generate_confint_infec_init(chn, y_data, K, conv_mat, knots, obstimes; 
 end
 
 # Create a function to take in the chains and evaluate the number of recovereds and summarise them (at a specific confidence level)
-function generate_confint_recov_init(chn, y_data, K, conv_mat, knots, obstimes; cri = 0.95)
+function generate_confint_recov_init(chn, model; cri = 0.95)
     chnm_res = generated_quantities(
-        bayes_sir_tvp(K;
-            conv_mat = conv_mat,
-            knots = knots,
-            obstimes = obstimes
-            )| (y = y_data, ),
+        model,
         chn) 
 
     infecs = stack(map(x -> Array(x.sol)[4,:,:], chnm_res[1,:]))
@@ -444,7 +436,7 @@ savefig(string(outdir,"nuts_betas_window_1_$seed_idx.png"))
 
 
 # Plot the infecteds
-confint = generate_confint_infec_init(ode_nuts, Y[:,1:Window_size], K_window, conv_mat_window, knots_window, obstimes_window; cri = 0.9)
+confint = generate_confint_infec_init(ode_nuts,model_window_unconditioned | (y = Y[:,1:Window_size],); cri = 0.2)
 StatsPlots.plot(confint.medci_inf', ribbon = (confint.medci_inf' - confint.lowci_inf', confint.uppci_inf' - confint.medci_inf') , legend = false)
 StatsPlots.plot!(I_dat[:,1:Window_size]', linewidth = 2, color = :red)
 StatsPlots.plot!(size = (1200,800))
@@ -452,7 +444,7 @@ StatsPlots.plot!(size = (1200,800))
 savefig(string(outdir,"infections_nuts_window_1_$seed_idx.png"))
 
 # Plot the recovereds
-confint = generate_confint_recov_init(ode_nuts, Y[:,1:Window_size], K_window, conv_mat_window, knots_window, obstimes_window; cri = 0.9)
+confint = generate_confint_recov_init(ode_nuts,model_window_unconditioned| (y = Y[:,1:Window_size],); cri = 0.2)
 StatsPlots.plot(confint.medci_inf', ribbon = (confint.medci_inf' - confint.lowci_inf', confint.uppci_inf' - confint.medci_inf')  , legend = false)
 StatsPlots.plot!(R_dat[:,1:Window_size]', linewidth = 2, color = :red)
 StatsPlots.plot!(size = (1200,800))
